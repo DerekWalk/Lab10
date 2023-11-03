@@ -1,0 +1,161 @@
+---
+title: "Lab10"
+author: "Derek Walker"
+format: html
+editor: visual
+---
+
+## Question 1
+
+```{r}
+library(RSQLite)
+library(DBI)
+
+# Initialize a temporary in memory database
+con <- dbConnect(SQLite(), ":memory:")
+
+# Download tables
+actor <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/actor.csv")
+rental <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/rental.csv")
+customer <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/customer.csv")
+payment <- read.csv("https://raw.githubusercontent.com/ivanceras/sakila/master/csv-sakila-db/payment_p2007_01.csv")
+
+# Copy data.frames to database
+dbWriteTable(con, "actor", actor)
+dbWriteTable(con, "rental", rental)
+dbWriteTable(con, "customer", customer)
+dbWriteTable(con, "payment", payment)
+
+dbListTables(con)
+```
+
+## Question 1
+
+```{sql, connection=con}
+SELECT  actor_id, first_name, last_name
+FROM actor
+ORDER by last_name, first_name
+```
+
+## Question 2
+
+```{sql, connection=con}
+SELECT actor_id, first_name, last_name
+FROM actor
+WHERE last_name IN ('WILLIAMS', 'DAVIS')
+```
+
+## Question 3
+
+```{sql, connection=con}
+SELECT *
+FROM rental
+```
+
+```{sql, connection=con}
+SELECT DISTINCT customer_id
+FROM rental
+WHERE date(rental_date) = '2005-07-05'
+```
+
+## Question 4
+
+```{sql, connection=con}
+SELECT *
+FROM payment
+WHERE amount IN (1.99, 7.99, 9.99)
+```
+
+```{sql, connection=con}
+SELECT *
+FROM payment
+WHERE amount > 5
+```
+
+```{sql, connection=con}
+SELECT *
+FROM payment
+WHERE (amount >5) AND (amount <8) 
+```
+
+```{sql, connection=con}
+SELECT *
+FROM payment
+WHERE amount BETWEEN 5 and 8
+```
+
+## Question 5
+
+```{sql, connection=con}
+PRAGMA table_info(customer)
+```
+
+```{sql, connection=con}
+PRAGMA table_info(payment)
+```
+
+```{sql, connection=con}
+SELECT c.customer_id, c.first_name, c.last_name, p.payment_id
+FROM customer AS c
+  INNER JOIN payment AS p
+ON c.customer_id = p.customer_id
+WHERE c.last_name = 'DAVIS'
+```
+
+## Question 6
+
+```{sql, connection=con}
+SELECT COUNT(*) AS n_obs
+FROM rental
+```
+
+```{sql, connection=con}
+SELECT COUNT(*) AS n_obs, customer_id
+FROM rental
+GROUP BY customer_id
+```
+
+```{sql, connection=con}
+SELECT COUNT(*) AS n_obs, customer_id
+FROM rental
+GROUP BY customer_id
+ORDER BY n_obs DESC
+```
+
+```{sql, connection=con}
+SELECT COUNT(*) AS n_obs, customer_id
+FROM rental
+GROUP BY customer_id
+HAVING n_obs >=40
+ORDER BY n_obs DESC
+```
+
+## Question 7
+
+```{sql, connection=con}
+SELECT customer_id,
+       MAX(amount) AS max_amount,
+       MIN (amount) AS min_amount,
+       AVG(amount) AS avg_amount,
+       SUM(amount) AS sum_amount,
+       COUNT(*) AS count
+FROM payment
+GROUP BY customer_id
+ORDER BY COUNT DESC
+```
+
+```{sql, connection=con}
+SELECT customer_id,
+       MAX(amount) AS max_amount,
+       MIN (amount) AS min_amount,
+       AVG(amount) AS avg_amount,
+       SUM(amount) AS sum_amount,
+       COUNT(*) AS count
+FROM payment
+GROUP BY customer_id
+HAVING COUNT > 5
+```
+
+```{r}
+dbDisconnect(con)
+```
